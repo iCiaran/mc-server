@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"io"
 	"log"
@@ -20,6 +21,27 @@ type HandshakeRequest struct {
 	serverAddress   String
 	serverPort      uint16
 	nextState       int32
+}
+
+type StatusResponseVersion struct {
+	Name     string `json:"name"`
+	Protocol int32  `json:"protocol"`
+}
+
+type StatusResponsePlayers struct {
+	Max    int `json:"max"`
+	Online int `json:"online"`
+}
+
+type StatusResponseDescription struct {
+	Text string `json:"text"`
+}
+
+type StatusResponse struct {
+	Version           StatusResponseVersion     `json:"version"`
+	Players           StatusResponsePlayers     `json:"players"`
+	Description       StatusResponseDescription `json:"description"`
+	EnforceSecureChat bool                      `json:"enforceSecureChat"`
 }
 
 func parseVarInt(reader io.Reader) (int32, int, error) {
@@ -46,6 +68,19 @@ func parseVarInt(reader io.Reader) (int32, int, error) {
 	}
 
 	return int32(value), position, nil
+}
+
+func writeVarInt(value int32) []byte {
+	buffer := make([]byte, 0)
+	for {
+		if value & ^0x7f == 0 {
+			return append(buffer, byte(value))
+		}
+
+		buffer = append(buffer, byte((value&0x7f)|0x80))
+
+		value = int32(uint32(value) >> 7)
+	}
 }
 
 func parseString(reader io.Reader) (String, error) {
@@ -133,6 +168,51 @@ func handleConnection(conn net.Conn) {
 
 	handShakePacket := HandshakeRequest{protocolVersion: protocolVersion, serverAddress: serverAddress, serverPort: serverPort, nextState: nextState}
 	log.Printf("Handshake packet is %+v\n", handShakePacket)
+
+	packetLength, _, err = parseVarInt(conn)
+	if err != nil {
+		log.Printf("Error parsing varint: %v", err)
+		return
+	}
+	log.Printf("Packet length is %d bytes\n", packetLength)
+
+	statusResponse := StatusResponse{
+		Version: StatusResponseVersion{
+			Name:     "1.21",
+			Protocol: 767,
+		},
+		Players: StatusResponsePlayers{
+			Max:    10,
+			Online: 0,
+		},
+		Description: StatusResponseDescription{
+			Text: "Ciaran woz ere",
+		},
+		EnforceSecureChat: false,
+	}
+
+	statusResponseJson, err := json.Marshal(statusResponse)
+	if err != nil {
+		log.Printf("Error marshaling Status Response json: %v", err)
+		return
+	}
+
+	packetIdBytes := writeVarInt(0)
+	packetIdLength := len(packetIdBytes)
+
+	statusResponseStringLength := writeVarInt(int32(len(statusResponseJson)))
+	statusResponseData := append(statusResponseStringLength, statusResponseJson...)
+	statusResponseDataLength := len(statusResponseData)
+	statusResponseLength := writeVarInt(int32(packetIdLength + statusResponseDataLength))
+
+	statusResponsePacket := append(statusResponseLength, packetIdBytes...)
+	statusResponsePacket = append(statusResponsePacket, statusResponseData...)
+
+	_, err = conn.Write(statusResponsePacket)
+	if err != nil {
+		log.Printf("Error writing status response packet: %v", err)
+		return
+	}
 
 }
 
