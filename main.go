@@ -214,6 +214,38 @@ func handleConnection(conn net.Conn) {
 		return
 	}
 
+	packetLength, _, err = parseVarInt(conn)
+	if err != nil {
+		log.Printf("Error parsing varint: %v", err)
+		return
+	}
+	log.Printf("Packet length is %d bytes\n", packetLength)
+
+	packetId, n, err = parseVarInt(conn)
+	if err != nil {
+		log.Printf("Error parsing varint: %v", err)
+		return
+	}
+	log.Printf("Packet id is %d\n", packetId)
+
+	pingPayloadBytes := make([]byte, 8)
+	_, err = conn.Read(pingPayloadBytes)
+	if err != nil {
+		log.Printf("Error reading ping payload: %v", err)
+	}
+
+	pingPayload := int64(binary.BigEndian.Uint64(pingPayloadBytes))
+	log.Printf("Ping payload is %d\n", pingPayload)
+
+	pingPayloadResponseId := writeVarInt(1)
+	pingPayloadResponse := append(pingPayloadResponseId, pingPayloadBytes...)
+	pingPayloadResponseLength := len(pingPayloadResponse)
+	pingPayloadResponseBytes := append(writeVarInt(int32(pingPayloadResponseLength)), pingPayloadResponse...)
+	_, err = conn.Write(pingPayloadResponseBytes)
+	if err != nil {
+		log.Printf("Error writing ping payload: %v", err)
+	}
+
 }
 
 func main() {
