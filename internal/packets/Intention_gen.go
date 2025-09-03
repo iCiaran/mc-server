@@ -2,7 +2,10 @@
 
 package packets
 
-import "io"
+import (
+	"encoding/json"
+	"io"
+)
 
 func DeserializeIntention(reader io.Reader) (Intention, int, error) {
 	return Intention{}, 0, nil
@@ -17,6 +20,7 @@ func (p Intention) Serialize() ([]byte, error) {
 	}
 
 	dataBuffer := make([]byte, 0)
+
 	fieldProtocolVersion, err := p.ProtocolVersion.Serialize()
 	if err != nil {
 		return nil, err
