@@ -65,6 +65,24 @@ func (u UnsignedShort) Serialize() ([]byte, error) {
 	return buffer, nil
 }
 
+type Long uint64
+
+func DeserializeLong(reader io.Reader) (Long, int, error) {
+	data := make([]byte, 8)
+	_, err := reader.Read(data)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return Long(binary.BigEndian.Uint64(data)), 0, nil
+}
+
+func (l Long) Serialize() ([]byte, error) {
+	buffer := make([]byte, 8)
+	binary.LittleEndian.PutUint64(buffer, uint64(l))
+	return buffer, nil
+}
+
 type String string
 
 func DeserializeString(reader io.Reader) (String, int, error) {

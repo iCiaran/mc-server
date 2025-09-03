@@ -35,7 +35,11 @@ func decodePacket(reader io.Reader, state packets.VarInt) (interface{}, error) {
 		return intention, err
 	} else if state == 1 && packetId == 0x00 {
 		log.Println("Deserializing StatusRequest")
-		pingRequest, _, err := packets.DeserializeStatusRequest(packetReader)
+		statusRequest, _, err := packets.DeserializeStatusRequest(packetReader)
+		return statusRequest, err
+	} else if state == 1 && packetId == 0x01 {
+		log.Println("Deserializing PingRequest")
+		pingRequest, _, err := packets.DeserializePingRequest(packetReader)
 		return pingRequest, err
 	}
 
@@ -82,7 +86,6 @@ func handleConnection(conn net.Conn) {
 			EnforceSecureChat: false,
 		},
 	}.Serialize()
-
 	if err != nil {
 		log.Printf("Error serializing statusResponse: %v\n", err)
 		return
@@ -92,6 +95,25 @@ func handleConnection(conn net.Conn) {
 	if err != nil {
 		log.Printf("Error writing statusResponse: %v\n", err)
 		return
+	}
+
+	pingRequest, err := decodePacket(conn, state)
+	if err != nil {
+		log.Printf("Error decoding pingRequest: %v\n", err)
+		return
+	}
+
+	pongResponse, err := packets.PongResponse{
+		Timestamp: pingRequest.(packets.PingRequest).Timestamp,
+	}.Serialize()
+	if err != nil {
+		log.Printf("Error serializing pongResponse: %v\n", err)
+		return
+	}
+
+	_, err = conn.Write(pongResponse)
+	if err != nil {
+		log.Printf("Error writing pongResponse: %v\n", err)
 	}
 
 }
