@@ -3,7 +3,6 @@
 package packets
 
 import (
-	"encoding/json"
 	"io"
 )
 

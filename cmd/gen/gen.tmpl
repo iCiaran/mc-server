@@ -4,8 +4,10 @@
 package packets
 
 import (
-	"io"
+	{{- if .HasJson }}
 	"encoding/json"
+	{{ end -}}
+  "io"
 )
 
 func Deserialize{{ .PacketType }}(reader io.Reader) ({{ .PacketType }}, int, error) {

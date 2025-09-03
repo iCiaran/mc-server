@@ -27,6 +27,7 @@ type PacketInfo struct {
 	CommandArgs string
 	PacketType  string
 	PacketId    int64
+	HasJson     bool
 	Fields      []packetField
 }
 
@@ -90,6 +91,7 @@ func main() {
 		strings.Join(os.Args[1:], " "),
 		*packetType,
 		id,
+		false,
 		[]packetField{},
 	}
 
@@ -97,11 +99,18 @@ func main() {
 		field := typeStruct.Field(i)
 		tag := typeStruct.Tag(i)
 
+		isJson := strings.Contains(tag, "json")
+
 		packetInfo.Fields = append(packetInfo.Fields, packetField{
 			Name:   field.Name(),
 			Type:   types.TypeString(field.Type(), func(*types.Package) string { return "" }),
-			IsJson: strings.Contains(tag, "json"),
+			IsJson: isJson,
 		})
+
+		if isJson {
+			packetInfo.HasJson = true
+
+		}
 	}
 
 	_, filename, _, _ := runtime.Caller(0)
