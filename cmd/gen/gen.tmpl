@@ -36,8 +36,8 @@ func (p {{ .PacketType }}) Serialize() ([]byte, error) {
         return nil, err
       }
 
-      buffer = append(buffer, field{{ $element.Name }}Length...)
-      buffer = append(buffer, field{{ $element.Name }}...)
+      dataBuffer = append(dataBuffer, field{{ $element.Name }}Length...)
+      dataBuffer = append(dataBuffer, field{{ $element.Name }}...)
 
     {{ else }}
       field{{ $element.Name }}, err := p.{{ $element.Name }}.Serialize()
@@ -54,8 +54,8 @@ func (p {{ .PacketType }}) Serialize() ([]byte, error) {
 	  return nil, err
   }
 
-  buffer = append(buffer, packetIdBytes...)
   buffer = append(buffer, serializedLength...)
+  buffer = append(buffer, packetIdBytes...)
   buffer = append(buffer, dataBuffer...)
 
 	return buffer, nil

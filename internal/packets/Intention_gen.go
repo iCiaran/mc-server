@@ -49,8 +49,8 @@ func (p Intention) Serialize() ([]byte, error) {
 		return nil, err
 	}
 
-	buffer = append(buffer, packetIdBytes...)
 	buffer = append(buffer, serializedLength...)
+	buffer = append(buffer, packetIdBytes...)
 	buffer = append(buffer, dataBuffer...)
 
 	return buffer, nil

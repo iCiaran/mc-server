@@ -31,16 +31,16 @@ func (p StatusResponse) Serialize() ([]byte, error) {
 		return nil, err
 	}
 
-	buffer = append(buffer, fieldResponseLength...)
-	buffer = append(buffer, fieldResponse...)
+	dataBuffer = append(dataBuffer, fieldResponseLength...)
+	dataBuffer = append(dataBuffer, fieldResponse...)
 
 	serializedLength, err := VarInt(len(packetIdBytes) + len(dataBuffer)).Serialize()
 	if err != nil {
 		return nil, err
 	}
 
-	buffer = append(buffer, packetIdBytes...)
 	buffer = append(buffer, serializedLength...)
+	buffer = append(buffer, packetIdBytes...)
 	buffer = append(buffer, dataBuffer...)
 
 	return buffer, nil
