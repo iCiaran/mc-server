@@ -3,7 +3,10 @@
 
 package packets
 
-import "io"
+import (
+	"io"
+	"encoding/json"
+)
 
 func Deserialize{{ .PacketType }}(reader io.Reader) ({{ .PacketType }}, int, error) {
   return {{ .PacketType }}{}, 0, nil
@@ -19,12 +22,28 @@ func (p {{ .PacketType }}) Serialize() ([]byte, error) {
 
   dataBuffer := make([]byte, 0)
 
-  {{- range $index, $element := .Fields }}
+  {{ range $index, $element := .Fields }}
+  {{ if $element.IsJson }}
+  {{ else }}
   field{{ $element.Name }}, err := p.{{ $element.Name }}.Serialize()
   if err != nil {
     return nil, err
   }
   dataBuffer = append(dataBuffer, field{{ $element.Name }}...)
+
+  {{ end }}
+  field{{ $element.Name }}, err := json.Marshal(p.{{ $element.Name }})
+  if err != nil {
+    return nil, err
+  }
+
+  field{{ $element.Name }}Length, err := VarInt(len(field{{ $element.Name }})).Serialize()
+  if err != nil {
+	  return nil, err
+  }
+
+  buffer = append(buffer, field{{ $element.Name }}Length...)
+  buffer = append(buffer, field{{ $element.Name }}...)
 
   {{ end }}
 
