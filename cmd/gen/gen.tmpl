@@ -11,7 +11,35 @@ import (
 )
 
 func Deserialize{{ .PacketType }}(reader io.Reader) ({{ .PacketType }}, int, error) {
-  return {{ .PacketType }}{}, 0, nil
+
+	{{ $packetType := .PacketType }}
+	{{ range $element := .Fields }}
+	  {{ if $element.IsJson }}
+	    field{{ $element.Name }}String, _, err := DeserializeString(reader)
+		  if err != nil {
+			  return {{ $packetType }}{}, 0, err
+      }
+
+	    var field{{ $element.Name }} {{ $element.Type }}
+      err = json.Unmarshal([]byte(field{{ $element.Name }}String), &field{{ $element.Name }})
+	    if err != nil {
+			  return {{ $packetType }}{}, 0, err
+      }
+
+	  {{ else }}
+      field{{ $element.Name }}, _, err := Deserialize{{ $element.Type }}(reader)
+      if err != nil {
+        return {{ $packetType }}{}, 0, err
+      }
+
+	  {{ end }}
+	{{ end }}
+
+  return {{ .PacketType }}{
+	  {{- range $element := .Fields }}
+	    {{ $element.Name }}: field{{ $element.Name }},
+	  {{ end }}
+  }, 0, nil
 }
 
 func (p {{ .PacketType }}) Serialize() ([]byte, error) {
@@ -24,7 +52,7 @@ func (p {{ .PacketType }}) Serialize() ([]byte, error) {
 
   dataBuffer := make([]byte, 0)
 
-  {{ range $index, $element := .Fields }}
+  {{ range $element := .Fields }}
     {{ if $element.IsJson }}
       field{{ $element.Name }}, err := json.Marshal(p.{{ $element.Name }})
       if err != nil {

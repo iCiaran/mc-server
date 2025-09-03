@@ -49,7 +49,15 @@ func (v VarInt) Serialize() ([]byte, error) {
 
 type UnsignedShort uint16
 
-// TODO: DeserializeUnsignedShort
+func DeserializeUnsignedShort(reader io.Reader) (UnsignedShort, int, error) {
+	data := make([]byte, 2)
+	_, err := reader.Read(data)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return UnsignedShort(binary.BigEndian.Uint16(data)), 0, nil
+}
 
 func (u UnsignedShort) Serialize() ([]byte, error) {
 	buffer := make([]byte, 2)
@@ -57,23 +65,33 @@ func (u UnsignedShort) Serialize() ([]byte, error) {
 	return buffer, nil
 }
 
-type String struct {
-	length int32
-	data   string
-}
+type String string
 
-// TODO: DeserializeString
+func DeserializeString(reader io.Reader) (String, int, error) {
+	stringLength, _, err := DeserializeVarInt(reader)
+	if err != nil {
+		return "", 0, err
+	}
+
+	textBytes := make([]byte, stringLength)
+	_, err = reader.Read(textBytes)
+	if err != nil {
+		return "", 0, err
+	}
+
+	return String(textBytes), int(stringLength), nil
+}
 
 func (s String) Serialize() ([]byte, error) {
 	buffer := make([]byte, 0)
 
-	length, err := VarInt(len(s.data)).Serialize()
+	length, err := VarInt(len(s)).Serialize()
 	if err != nil {
 		return nil, err
 	}
 
 	buffer = append(buffer, length...)
-	buffer = append(buffer, []byte(s.data)...)
+	buffer = append(buffer, []byte(s)...)
 
 	return buffer, nil
 }

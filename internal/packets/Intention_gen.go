@@ -7,7 +7,36 @@ import (
 )
 
 func DeserializeIntention(reader io.Reader) (Intention, int, error) {
-	return Intention{}, 0, nil
+
+	fieldProtocolVersion, _, err := DeserializeVarInt(reader)
+	if err != nil {
+		return Intention{}, 0, err
+	}
+
+	fieldServerAddress, _, err := DeserializeString(reader)
+	if err != nil {
+		return Intention{}, 0, err
+	}
+
+	fieldServerPort, _, err := DeserializeUnsignedShort(reader)
+	if err != nil {
+		return Intention{}, 0, err
+	}
+
+	fieldIntent, _, err := DeserializeVarInt(reader)
+	if err != nil {
+		return Intention{}, 0, err
+	}
+
+	return Intention{
+		ProtocolVersion: fieldProtocolVersion,
+
+		ServerAddress: fieldServerAddress,
+
+		ServerPort: fieldServerPort,
+
+		Intent: fieldIntent,
+	}, 0, nil
 }
 
 func (p Intention) Serialize() ([]byte, error) {

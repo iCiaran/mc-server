@@ -8,7 +8,21 @@ import (
 )
 
 func DeserializeStatusResponse(reader io.Reader) (StatusResponse, int, error) {
-	return StatusResponse{}, 0, nil
+
+	fieldResponseString, _, err := DeserializeString(reader)
+	if err != nil {
+		return StatusResponse{}, 0, err
+	}
+
+	var fieldResponse StatusResponseJson
+	err = json.Unmarshal([]byte(fieldResponseString), &fieldResponse)
+	if err != nil {
+		return StatusResponse{}, 0, err
+	}
+
+	return StatusResponse{
+		Response: fieldResponse,
+	}, 0, nil
 }
 
 func (p StatusResponse) Serialize() ([]byte, error) {
