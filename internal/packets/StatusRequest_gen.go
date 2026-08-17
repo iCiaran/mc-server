@@ -28,6 +28,7 @@ func (p StatusRequest) Serialize() ([]byte, error) {
 
 	buffer = append(buffer, serializedLength...)
 	buffer = append(buffer, packetIdBytes...)
+
 	buffer = append(buffer, dataBuffer...)
 
 	return buffer, nil
