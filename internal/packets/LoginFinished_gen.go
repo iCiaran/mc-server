@@ -8,34 +8,20 @@ import (
 
 func DeserializeLoginFinished(reader io.Reader) (LoginFinished, int, error) {
 
-	fieldUUID, _, err := DeserializeUUID(reader)
+	fieldProfile, _, err := DeserializeGameProfile(reader)
 	if err != nil {
 		return LoginFinished{}, 0, err
 	}
 
-	fieldName, _, err := DeserializeString(reader)
-	if err != nil {
-		return LoginFinished{}, 0, err
-	}
-
-	fieldProperties, _, err := DeserializeVarInt(reader)
-	if err != nil {
-		return LoginFinished{}, 0, err
-	}
-
-	fieldStrict, _, err := DeserializeBoolean(reader)
+	fieldSessionId, _, err := DeserializeUUID(reader)
 	if err != nil {
 		return LoginFinished{}, 0, err
 	}
 
 	return LoginFinished{
-		UUID: fieldUUID,
+		Profile: fieldProfile,
 
-		Name: fieldName,
-
-		Properties: fieldProperties,
-
-		Strict: fieldStrict,
+		SessionId: fieldSessionId,
 	}, 0, nil
 }
 
@@ -49,29 +35,17 @@ func (p LoginFinished) Serialize() ([]byte, error) {
 
 	dataBuffer := make([]byte, 0)
 
-	fieldUUID, err := p.UUID.Serialize()
+	fieldProfile, err := p.Profile.Serialize()
 	if err != nil {
 		return nil, err
 	}
-	dataBuffer = append(dataBuffer, fieldUUID...)
+	dataBuffer = append(dataBuffer, fieldProfile...)
 
-	fieldName, err := p.Name.Serialize()
+	fieldSessionId, err := p.SessionId.Serialize()
 	if err != nil {
 		return nil, err
 	}
-	dataBuffer = append(dataBuffer, fieldName...)
-
-	fieldProperties, err := p.Properties.Serialize()
-	if err != nil {
-		return nil, err
-	}
-	dataBuffer = append(dataBuffer, fieldProperties...)
-
-	fieldStrict, err := p.Strict.Serialize()
-	if err != nil {
-		return nil, err
-	}
-	dataBuffer = append(dataBuffer, fieldStrict...)
+	dataBuffer = append(dataBuffer, fieldSessionId...)
 
 	serializedLength, err := VarInt(len(packetIdBytes) + len(dataBuffer)).Serialize()
 	if err != nil {

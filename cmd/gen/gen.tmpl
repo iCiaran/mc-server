@@ -21,11 +21,28 @@ func Deserialize{{ .PacketType }}(reader io.Reader) ({{ .PacketType }}, int, err
       }
 
 	    var field{{ $element.Name }} {{ $element.Type }}
-      err = json.Unmarshal([]byte(field{{ $element.Name }}String), &field{{ $element.Name }})
+        err = json.Unmarshal([]byte(field{{ $element.Name }}String), &field{{ $element.Name }})
 	    if err != nil {
 			  return {{ $packetType }}{}, 0, err
       }
 
+      {{ else if $element.IsArray }}
+
+      size, _, err := DeserializeVarInt(reader)
+      if err != nil {
+        return {{ $packetType }}{}, 0, err
+      }
+
+      field{{ $element.Name }} := make([]{{ $element.Type }}, size)
+
+      for range size {
+        nextValue, _, err := Deserialize{{ $element.Type }}(reader)
+        if err != nil {
+          return {{ $packetType }}{}, 0, err
+        }
+
+        field{{ $element.Name }} = append(field{{ $element.Name }}, nextValue)
+      }
 	  {{ else }}
       field{{ $element.Name }}, _, err := Deserialize{{ $element.Type }}(reader)
       if err != nil {
@@ -43,12 +60,13 @@ func Deserialize{{ .PacketType }}(reader io.Reader) ({{ .PacketType }}, int, err
 }
 
 func (p {{ .PacketType }}) Serialize() ([]byte, error) {
-	buffer := make([]byte, 0)
-
+  buffer := make([]byte, 0)
+  {{ if (ge .PacketId 0) }}
   packetIdBytes, err := VarInt({{ .PacketId }}).Serialize()
   if err != nil {
 	  return nil, err
   }
+  {{ end }}
 
   dataBuffer := make([]byte, 0)
 
@@ -67,6 +85,21 @@ func (p {{ .PacketType }}) Serialize() ([]byte, error) {
       dataBuffer = append(dataBuffer, field{{ $element.Name }}Length...)
       dataBuffer = append(dataBuffer, field{{ $element.Name }}...)
 
+    {{ else if $element.IsArray }}
+      size, err := VarInt(len(p.{{ $element.Name }})).Serialize()
+      if err != nil {
+        return nil, err
+      }
+      dataBuffer = append(dataBuffer, size...)
+
+      for _, e := range p.{{ $element.Name }} {
+        serializedElement, err := e.Serialize()
+        if err != nil {
+          return nil, err
+        }
+        dataBuffer = append(dataBuffer, serializedElement...)
+      }
+
     {{ else }}
       field{{ $element.Name }}, err := p.{{ $element.Name }}.Serialize()
       if err != nil {
@@ -77,6 +110,7 @@ func (p {{ .PacketType }}) Serialize() ([]byte, error) {
     {{ end }}
   {{ end }}
 
+  {{ if (ge .PacketId 0) }}
   serializedLength, err := VarInt(len(packetIdBytes) + len(dataBuffer)).Serialize()
   if err != nil {
 	  return nil, err
@@ -84,6 +118,7 @@ func (p {{ .PacketType }}) Serialize() ([]byte, error) {
 
   buffer = append(buffer, serializedLength...)
   buffer = append(buffer, packetIdBytes...)
+  {{ end }}
   buffer = append(buffer, dataBuffer...)
 
 	return buffer, nil

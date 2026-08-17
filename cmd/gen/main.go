@@ -19,9 +19,11 @@ import (
 )
 
 type packetField struct {
-	Name   string
-	Type   string
-	IsJson bool
+	Name       string
+	Type       string
+	IsJson     bool
+	IsPrefixed bool
+	IsArray    bool
 }
 type PacketInfo struct {
 	CommandArgs string
@@ -41,7 +43,7 @@ func main() {
 	}
 
 	if *packetId == "" {
-		log.Fatalln("--id is required")
+		*packetId = "-0x01"
 	}
 
 	id, err := strconv.ParseInt(*packetId, 0, 64)
@@ -101,15 +103,21 @@ func main() {
 
 		isJson := strings.Contains(tag, "json")
 
+		fieldType := types.TypeString(field.Type(), func(*types.Package) string { return "" })
+		isArray := strings.HasPrefix(fieldType, "[]")
+		if isArray {
+			fieldType = fieldType[2:]
+		}
+
 		packetInfo.Fields = append(packetInfo.Fields, packetField{
-			Name:   field.Name(),
-			Type:   types.TypeString(field.Type(), func(*types.Package) string { return "" }),
-			IsJson: isJson,
+			Name:    field.Name(),
+			Type:    fieldType,
+			IsJson:  isJson,
+			IsArray: isArray,
 		})
 
 		if isJson {
 			packetInfo.HasJson = true
-
 		}
 	}
 
@@ -126,6 +134,8 @@ func main() {
 
 	formatted, err := format.Source([]byte(buf.String()))
 	if err != nil {
+		outputFile := fmt.Sprintf("%s_gen_debug.go", *packetType)
+		os.WriteFile(outputFile, []byte(buf.String()), 0644)
 		log.Fatalf("Failed to format %v: %v", *packetType, err)
 	}
 

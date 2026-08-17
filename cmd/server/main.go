@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/rand"
 	"fmt"
 	"io"
 	"log"
@@ -64,8 +65,8 @@ func handleStatus(conn net.Conn, state packets.VarInt) error {
 	statusResponse, err := packets.StatusResponse{
 		Response: packets.StatusResponseJson{
 			Version: packets.StatusResponseVersion{
-				Name:     "1.21",
-				Protocol: 767,
+				Name:     "26.2",
+				Protocol: 776,
 			},
 			Players: packets.StatusResponsePlayers{
 				Max:    10,
@@ -120,11 +121,20 @@ func handleLogin(conn net.Conn, state packets.VarInt) error {
 
 	log.Printf("LoginStart: %v\n", loginStart)
 
+	sessionId := make([]byte, 16)
+	_, err = rand.Read(sessionId)
+	if err != nil {
+		log.Printf("Error generating sessionId: %v\n", err)
+		return err
+	}
+
 	loginFinished := packets.LoginFinished{
-		Name:       loginStart.(packets.LoginStart).Name,
-		UUID:       loginStart.(packets.LoginStart).UUID,
-		Properties: 0,
-		Strict:     false,
+		Profile: packets.GameProfile{
+			UUID:       loginStart.(packets.LoginStart).UUID,
+			Username:   loginStart.(packets.LoginStart).Name,
+			Properties: make([]packets.GameProfileProperty, 0),
+		},
+		SessionId: packets.UUID(sessionId),
 	}
 	log.Printf("LoginFinished: %v\n", loginFinished)
 
