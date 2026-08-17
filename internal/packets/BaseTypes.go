@@ -2,6 +2,7 @@ package packets
 
 import (
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"io"
 )
@@ -112,4 +113,55 @@ func (s String) Serialize() ([]byte, error) {
 	buffer = append(buffer, []byte(s)...)
 
 	return buffer, nil
+}
+
+type Boolean bool
+
+func DeserializeBoolean(reader io.Reader) (Boolean, int, error) {
+	buffer := make([]byte, 1)
+	_, err := reader.Read(buffer)
+	if err != nil {
+		return false, 0, err
+	}
+
+	return buffer[0] == 1, 0, nil
+}
+
+func (b Boolean) Serialize() ([]byte, error) {
+	buffer := make([]byte, 1)
+	if b {
+		buffer[0] = 1
+	} else {
+		buffer[0] = 0
+	}
+	return buffer, nil
+}
+
+type UUID [16]byte
+
+func DeserializeUUID(reader io.Reader) (UUID, int, error) {
+	data := make([]byte, 16)
+	_, err := reader.Read(data)
+	if err != nil {
+		return UUID{}, 0, err
+	}
+	return UUID(data), 0, nil
+}
+
+func (u UUID) Serialize() ([]byte, error) {
+	return u[:], nil
+}
+
+func (u UUID) String() string {
+	var dst [36]byte
+	hex.Encode(dst[0:8], u[0:4])
+	dst[8] = '-'
+	hex.Encode(dst[9:13], u[4:6])
+	dst[13] = '-'
+	hex.Encode(dst[14:18], u[6:8])
+	dst[18] = '-'
+	hex.Encode(dst[19:23], u[8:10])
+	dst[23] = '-'
+	hex.Encode(dst[24:36], u[10:16])
+	return string(dst[:])
 }

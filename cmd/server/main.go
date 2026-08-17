@@ -41,33 +41,24 @@ func decodePacket(reader io.Reader, state packets.VarInt) (interface{}, error) {
 		log.Println("Deserializing PingRequest")
 		pingRequest, _, err := packets.DeserializePingRequest(packetReader)
 		return pingRequest, err
+	} else if state == 2 && packetId == 0x00 {
+		log.Println("Deserializing LoginStart")
+		loginStart, _, err := packets.DeserializeLoginStart(packetReader)
+		return loginStart, err
+	} else if state == 2 && packetId == 0x03 {
+		log.Println("Deserializing LoginAcknowledged")
+		loginAcknowledged, _, err := packets.DeserializeLoginAcknowledged(packetReader)
+		return loginAcknowledged, err
 	}
 
 	return nil, fmt.Errorf("unknown packet (state: %d, id: %x)", state, packetId)
 }
 
-func handleConnection(conn net.Conn) {
-	defer func() {
-		err := conn.Close()
-		if err != nil {
-			log.Printf("Error closing connection: %v\n", err)
-		}
-	}()
-
-	state := packets.VarInt(0)
-
-	intention, err := decodePacket(conn, state)
-	if err != nil {
-		log.Printf("Error decoding intent: %v\n", err)
-		return
-	}
-
-	state = intention.(packets.Intention).Intent
-
-	_, err = decodePacket(conn, state)
+func handleStatus(conn net.Conn, state packets.VarInt) error {
+	_, err := decodePacket(conn, state)
 	if err != nil {
 		log.Printf("Error decoding statusRequest: %v\n", err)
-		return
+		return err
 	}
 
 	statusResponse, err := packets.StatusResponse{
@@ -88,19 +79,19 @@ func handleConnection(conn net.Conn) {
 	}.Serialize()
 	if err != nil {
 		log.Printf("Error serializing statusResponse: %v\n", err)
-		return
+		return err
 	}
 
 	_, err = conn.Write(statusResponse)
 	if err != nil {
 		log.Printf("Error writing statusResponse: %v\n", err)
-		return
+		return err
 	}
 
 	pingRequest, err := decodePacket(conn, state)
 	if err != nil {
 		log.Printf("Error decoding pingRequest: %v\n", err)
-		return
+		return err
 	}
 
 	pongResponse, err := packets.PongResponse{
@@ -108,14 +99,83 @@ func handleConnection(conn net.Conn) {
 	}.Serialize()
 	if err != nil {
 		log.Printf("Error serializing pongResponse: %v\n", err)
-		return
+		return err
 	}
 
 	_, err = conn.Write(pongResponse)
 	if err != nil {
 		log.Printf("Error writing pongResponse: %v\n", err)
+		return err
 	}
 
+	return nil
+}
+
+func handleLogin(conn net.Conn, state packets.VarInt) error {
+	loginStart, err := decodePacket(conn, state)
+	if err != nil {
+		log.Printf("Error decoding loginStart: %v\n", err)
+		return err
+	}
+
+	log.Printf("LoginStart: %v\n", loginStart)
+
+	loginFinished := packets.LoginFinished{
+		Name:       loginStart.(packets.LoginStart).Name,
+		UUID:       loginStart.(packets.LoginStart).UUID,
+		Properties: 0,
+		Strict:     false,
+	}
+	log.Printf("LoginFinished: %v\n", loginFinished)
+
+	loginFinishedSerialized, err := loginFinished.Serialize()
+	if err != nil {
+		log.Printf("Error serializing loginFinished: %v\n", err)
+		return err
+	}
+
+	_, err = conn.Write(loginFinishedSerialized)
+	if err != nil {
+		log.Printf("Error writing loginFinished: %v\n", err)
+		return err
+	}
+
+	_, err = decodePacket(conn, state)
+	if err != nil {
+		log.Printf("Error decoding loginAck: %v\n", err)
+		return err
+	}
+
+	return nil
+}
+
+func handleConnection(conn net.Conn) {
+	defer func() {
+		err := conn.Close()
+		if err != nil {
+			log.Printf("Error closing connection: %v\n", err)
+		}
+	}()
+
+	state := packets.VarInt(0)
+
+	intention, err := decodePacket(conn, state)
+	if err != nil {
+		log.Printf("Error decoding intent: %v\n", err)
+		return
+	}
+
+	state = intention.(packets.Intention).Intent
+
+	if state == 1 {
+		err = handleStatus(conn, state)
+	} else if state == 2 {
+		err = handleLogin(conn, state)
+	}
+
+	if err != nil {
+		log.Printf("Error handling post intent: %v\n", err)
+	}
 }
 
 func main() {
