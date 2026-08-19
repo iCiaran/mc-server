@@ -5,5 +5,5 @@ package packets
 type GameProfile struct {
 	UUID       UUID
 	Username   String
-	Properties []GameProfileProperty
+	Properties []GameProfileProperty `mc:"prefixed"`
 }

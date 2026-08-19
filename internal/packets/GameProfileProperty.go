@@ -5,5 +5,5 @@ package packets
 type GameProfileProperty struct {
 	Name      String
 	Value     String
-	Signature Boolean
+	Signature Boolean // TODO: change to *String `mc:"prefixed,optional"`
 }

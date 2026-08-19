@@ -24,6 +24,7 @@ type packetField struct {
 	IsJson     bool
 	IsPrefixed bool
 	IsArray    bool
+	IsOptional bool
 }
 type PacketInfo struct {
 	CommandArgs string
@@ -102,18 +103,36 @@ func main() {
 		tag := typeStruct.Tag(i)
 
 		isJson := strings.Contains(tag, "json")
+		isPrefixed := strings.Contains(tag, "prefixed")
+		isOptional := strings.Contains(tag, "optional")
 
 		fieldType := types.TypeString(field.Type(), func(*types.Package) string { return "" })
+		if isOptional {
+			if !isPrefixed {
+				log.Fatalf("Non prefixed optionals not yet supported: %v", field.Name())
+			}
+			if !strings.HasPrefix(fieldType, "*") {
+				log.Fatalf("Optional field %s must be a pointer type", field.Name())
+			}
+			fieldType = strings.TrimPrefix(fieldType, "*")
+		}
+
 		isArray := strings.HasPrefix(fieldType, "[]")
 		if isArray {
 			fieldType = fieldType[2:]
 		}
 
+		if isArray && !isPrefixed {
+			log.Fatalf("Non prefixed array not yet supported: %v", field.Name())
+		}
+
 		packetInfo.Fields = append(packetInfo.Fields, packetField{
-			Name:    field.Name(),
-			Type:    fieldType,
-			IsJson:  isJson,
-			IsArray: isArray,
+			Name:       field.Name(),
+			Type:       fieldType,
+			IsJson:     isJson,
+			IsArray:    isArray,
+			IsPrefixed: isPrefixed,
+			IsOptional: isOptional,
 		})
 
 		if isJson {

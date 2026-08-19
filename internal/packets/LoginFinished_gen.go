@@ -8,10 +8,14 @@ import (
 
 func DeserializeLoginFinished(reader io.Reader) (LoginFinished, int, error) {
 
+	// {Name:Profile Type:GameProfile IsJson:false IsPrefixed:false IsArray:false IsOptional:false}
+
 	fieldProfile, _, err := DeserializeGameProfile(reader)
 	if err != nil {
 		return LoginFinished{}, 0, err
 	}
+
+	// {Name:SessionId Type:UUID IsJson:false IsPrefixed:false IsArray:false IsOptional:false}
 
 	fieldSessionId, _, err := DeserializeUUID(reader)
 	if err != nil {
@@ -35,11 +39,15 @@ func (p LoginFinished) Serialize() ([]byte, error) {
 
 	dataBuffer := make([]byte, 0)
 
+	// {Name:Profile Type:GameProfile IsJson:false IsPrefixed:false IsArray:false IsOptional:false}
+
 	fieldProfile, err := p.Profile.Serialize()
 	if err != nil {
 		return nil, err
 	}
 	dataBuffer = append(dataBuffer, fieldProfile...)
+
+	// {Name:SessionId Type:UUID IsJson:false IsPrefixed:false IsArray:false IsOptional:false}
 
 	fieldSessionId, err := p.SessionId.Serialize()
 	if err != nil {

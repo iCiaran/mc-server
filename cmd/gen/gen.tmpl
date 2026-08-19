@@ -14,6 +14,7 @@ func Deserialize{{ .PacketType }}(reader io.Reader) ({{ .PacketType }}, int, err
 
 	{{ $packetType := .PacketType }}
 	{{ range $element := .Fields }}
+	// {{ printf "%+v" $element }}
 	  {{ if $element.IsJson }}
 	    field{{ $element.Name }}String, _, err := DeserializeString(reader)
 		  if err != nil {
@@ -71,6 +72,7 @@ func (p {{ .PacketType }}) Serialize() ([]byte, error) {
   dataBuffer := make([]byte, 0)
 
   {{ range $element := .Fields }}
+  // {{ printf "%+v" $element }}
     {{ if $element.IsJson }}
       field{{ $element.Name }}, err := json.Marshal(p.{{ $element.Name }})
       if err != nil {

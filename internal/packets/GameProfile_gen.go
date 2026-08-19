@@ -8,15 +8,21 @@ import (
 
 func DeserializeGameProfile(reader io.Reader) (GameProfile, int, error) {
 
+	// {Name:UUID Type:UUID IsJson:false IsPrefixed:false IsArray:false IsOptional:false}
+
 	fieldUUID, _, err := DeserializeUUID(reader)
 	if err != nil {
 		return GameProfile{}, 0, err
 	}
 
+	// {Name:Username Type:String IsJson:false IsPrefixed:false IsArray:false IsOptional:false}
+
 	fieldUsername, _, err := DeserializeString(reader)
 	if err != nil {
 		return GameProfile{}, 0, err
 	}
+
+	// {Name:Properties Type:GameProfileProperty IsJson:false IsPrefixed:true IsArray:true IsOptional:false}
 
 	size, _, err := DeserializeVarInt(reader)
 	if err != nil {
@@ -48,17 +54,23 @@ func (p GameProfile) Serialize() ([]byte, error) {
 
 	dataBuffer := make([]byte, 0)
 
+	// {Name:UUID Type:UUID IsJson:false IsPrefixed:false IsArray:false IsOptional:false}
+
 	fieldUUID, err := p.UUID.Serialize()
 	if err != nil {
 		return nil, err
 	}
 	dataBuffer = append(dataBuffer, fieldUUID...)
 
+	// {Name:Username Type:String IsJson:false IsPrefixed:false IsArray:false IsOptional:false}
+
 	fieldUsername, err := p.Username.Serialize()
 	if err != nil {
 		return nil, err
 	}
 	dataBuffer = append(dataBuffer, fieldUsername...)
+
+	// {Name:Properties Type:GameProfileProperty IsJson:false IsPrefixed:true IsArray:true IsOptional:false}
 
 	size, err := VarInt(len(p.Properties)).Serialize()
 	if err != nil {

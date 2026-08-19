@@ -8,6 +8,8 @@ import (
 
 func DeserializePingRequest(reader io.Reader) (PingRequest, int, error) {
 
+	// {Name:Timestamp Type:Long IsJson:false IsPrefixed:false IsArray:false IsOptional:false}
+
 	fieldTimestamp, _, err := DeserializeLong(reader)
 	if err != nil {
 		return PingRequest{}, 0, err
@@ -27,6 +29,8 @@ func (p PingRequest) Serialize() ([]byte, error) {
 	}
 
 	dataBuffer := make([]byte, 0)
+
+	// {Name:Timestamp Type:Long IsJson:false IsPrefixed:false IsArray:false IsOptional:false}
 
 	fieldTimestamp, err := p.Timestamp.Serialize()
 	if err != nil {

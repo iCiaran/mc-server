@@ -8,15 +8,21 @@ import (
 
 func DeserializeGameProfileProperty(reader io.Reader) (GameProfileProperty, int, error) {
 
+	// {Name:Name Type:String IsJson:false IsPrefixed:false IsArray:false IsOptional:false}
+
 	fieldName, _, err := DeserializeString(reader)
 	if err != nil {
 		return GameProfileProperty{}, 0, err
 	}
 
+	// {Name:Value Type:String IsJson:false IsPrefixed:false IsArray:false IsOptional:false}
+
 	fieldValue, _, err := DeserializeString(reader)
 	if err != nil {
 		return GameProfileProperty{}, 0, err
 	}
+
+	// {Name:Signature Type:Boolean IsJson:false IsPrefixed:false IsArray:false IsOptional:false}
 
 	fieldSignature, _, err := DeserializeBoolean(reader)
 	if err != nil {
@@ -37,17 +43,23 @@ func (p GameProfileProperty) Serialize() ([]byte, error) {
 
 	dataBuffer := make([]byte, 0)
 
+	// {Name:Name Type:String IsJson:false IsPrefixed:false IsArray:false IsOptional:false}
+
 	fieldName, err := p.Name.Serialize()
 	if err != nil {
 		return nil, err
 	}
 	dataBuffer = append(dataBuffer, fieldName...)
 
+	// {Name:Value Type:String IsJson:false IsPrefixed:false IsArray:false IsOptional:false}
+
 	fieldValue, err := p.Value.Serialize()
 	if err != nil {
 		return nil, err
 	}
 	dataBuffer = append(dataBuffer, fieldValue...)
+
+	// {Name:Signature Type:Boolean IsJson:false IsPrefixed:false IsArray:false IsOptional:false}
 
 	fieldSignature, err := p.Signature.Serialize()
 	if err != nil {

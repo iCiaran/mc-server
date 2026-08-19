@@ -8,10 +8,14 @@ import (
 
 func DeserializeLoginStart(reader io.Reader) (LoginStart, int, error) {
 
+	// {Name:Name Type:String IsJson:false IsPrefixed:false IsArray:false IsOptional:false}
+
 	fieldName, _, err := DeserializeString(reader)
 	if err != nil {
 		return LoginStart{}, 0, err
 	}
+
+	// {Name:UUID Type:UUID IsJson:false IsPrefixed:false IsArray:false IsOptional:false}
 
 	fieldUUID, _, err := DeserializeUUID(reader)
 	if err != nil {
@@ -35,11 +39,15 @@ func (p LoginStart) Serialize() ([]byte, error) {
 
 	dataBuffer := make([]byte, 0)
 
+	// {Name:Name Type:String IsJson:false IsPrefixed:false IsArray:false IsOptional:false}
+
 	fieldName, err := p.Name.Serialize()
 	if err != nil {
 		return nil, err
 	}
 	dataBuffer = append(dataBuffer, fieldName...)
+
+	// {Name:UUID Type:UUID IsJson:false IsPrefixed:false IsArray:false IsOptional:false}
 
 	fieldUUID, err := p.UUID.Serialize()
 	if err != nil {

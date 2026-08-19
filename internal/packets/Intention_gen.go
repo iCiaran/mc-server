@@ -8,20 +8,28 @@ import (
 
 func DeserializeIntention(reader io.Reader) (Intention, int, error) {
 
+	// {Name:ProtocolVersion Type:VarInt IsJson:false IsPrefixed:false IsArray:false IsOptional:false}
+
 	fieldProtocolVersion, _, err := DeserializeVarInt(reader)
 	if err != nil {
 		return Intention{}, 0, err
 	}
+
+	// {Name:ServerAddress Type:String IsJson:false IsPrefixed:false IsArray:false IsOptional:false}
 
 	fieldServerAddress, _, err := DeserializeString(reader)
 	if err != nil {
 		return Intention{}, 0, err
 	}
 
+	// {Name:ServerPort Type:UnsignedShort IsJson:false IsPrefixed:false IsArray:false IsOptional:false}
+
 	fieldServerPort, _, err := DeserializeUnsignedShort(reader)
 	if err != nil {
 		return Intention{}, 0, err
 	}
+
+	// {Name:Intent Type:VarInt IsJson:false IsPrefixed:false IsArray:false IsOptional:false}
 
 	fieldIntent, _, err := DeserializeVarInt(reader)
 	if err != nil {
@@ -49,11 +57,15 @@ func (p Intention) Serialize() ([]byte, error) {
 
 	dataBuffer := make([]byte, 0)
 
+	// {Name:ProtocolVersion Type:VarInt IsJson:false IsPrefixed:false IsArray:false IsOptional:false}
+
 	fieldProtocolVersion, err := p.ProtocolVersion.Serialize()
 	if err != nil {
 		return nil, err
 	}
 	dataBuffer = append(dataBuffer, fieldProtocolVersion...)
+
+	// {Name:ServerAddress Type:String IsJson:false IsPrefixed:false IsArray:false IsOptional:false}
 
 	fieldServerAddress, err := p.ServerAddress.Serialize()
 	if err != nil {
@@ -61,11 +73,15 @@ func (p Intention) Serialize() ([]byte, error) {
 	}
 	dataBuffer = append(dataBuffer, fieldServerAddress...)
 
+	// {Name:ServerPort Type:UnsignedShort IsJson:false IsPrefixed:false IsArray:false IsOptional:false}
+
 	fieldServerPort, err := p.ServerPort.Serialize()
 	if err != nil {
 		return nil, err
 	}
 	dataBuffer = append(dataBuffer, fieldServerPort...)
+
+	// {Name:Intent Type:VarInt IsJson:false IsPrefixed:false IsArray:false IsOptional:false}
 
 	fieldIntent, err := p.Intent.Serialize()
 	if err != nil {

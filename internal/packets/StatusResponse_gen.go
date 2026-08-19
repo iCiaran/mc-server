@@ -9,6 +9,8 @@ import (
 
 func DeserializeStatusResponse(reader io.Reader) (StatusResponse, int, error) {
 
+	// {Name:Response Type:StatusResponseJson IsJson:true IsPrefixed:false IsArray:false IsOptional:false}
+
 	fieldResponseString, _, err := DeserializeString(reader)
 	if err != nil {
 		return StatusResponse{}, 0, err
@@ -34,6 +36,8 @@ func (p StatusResponse) Serialize() ([]byte, error) {
 	}
 
 	dataBuffer := make([]byte, 0)
+
+	// {Name:Response Type:StatusResponseJson IsJson:true IsPrefixed:false IsArray:false IsOptional:false}
 
 	fieldResponse, err := json.Marshal(p.Response)
 	if err != nil {

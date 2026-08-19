@@ -8,6 +8,8 @@ import (
 
 func DeserializePongResponse(reader io.Reader) (PongResponse, int, error) {
 
+	// {Name:Timestamp Type:Long IsJson:false IsPrefixed:false IsArray:false IsOptional:false}
+
 	fieldTimestamp, _, err := DeserializeLong(reader)
 	if err != nil {
 		return PongResponse{}, 0, err
@@ -27,6 +29,8 @@ func (p PongResponse) Serialize() ([]byte, error) {
 	}
 
 	dataBuffer := make([]byte, 0)
+
+	// {Name:Timestamp Type:Long IsJson:false IsPrefixed:false IsArray:false IsOptional:false}
 
 	fieldTimestamp, err := p.Timestamp.Serialize()
 	if err != nil {
